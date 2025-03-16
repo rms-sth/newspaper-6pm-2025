@@ -43,7 +43,7 @@
             <!-- Logo -->
             <div class="col-xl-3 col-lg-3 col-md-3">
               <div class="logo">
-                <a href="index.html">
+                <a href="/">
                   <img src="{% static 'aznews/assets/img/logo/logo.png' %}" alt="" />
                 </a>
               </div>
@@ -62,7 +62,7 @@
             <div class="col-xl-10 col-lg-10 col-md-12 header-flex">
               <!-- sticky -->
               <div class="sticky-logo">
-                <a href="index.html">
+                <a href="/">
                   <img src="{% static 'aznews/assets/img/logo/logo.png' %}" alt="" />
                 </a>
               </div>
@@ -71,13 +71,15 @@
                 <nav>
                   <ul id="navigation">
                     <li>
-                      <a href="index.html">Home</a>
+                      <a href="/">Home</a>
                     </li>
+                    {% for category in categories %}
+                      <li>
+                        <a href="#">{{ category.name }}</a>
+                      </li>
+                    {% endfor %}
                     <li>
-                      <a href="categori.html">Category</a>
-                    </li>
-                    <li>
-                      <a href="about.html">About</a>
+                      <a href="{% url 'about' %}">About</a>
                     </li>
                     <li>
                       <a href="latest_news.html">Latest News</a>
@@ -86,20 +88,13 @@
                       <a href="contact.html">Contact</a>
                     </li>
                     <li>
-                      <a href="#">Pages</a>
+                      <a href="#">Tags</a>
                       <ul class="submenu">
-                        <li>
-                          <a href="elements.html">Element</a>
-                        </li>
-                        <li>
-                          <a href="blog.html">Blog</a>
-                        </li>
-                        <li>
-                          <a href="single-blog.html">Blog Details</a>
-                        </li>
-                        <li>
-                          <a href="details.html">Categori Details</a>
-                        </li>
+                        {% for tag in tags %}
+                          <li>
+                            <a href="#">{{ tag.name }}</a>
+                          </li>
+                        {% endfor %}
                       </ul>
                     </li>
                   </ul>
