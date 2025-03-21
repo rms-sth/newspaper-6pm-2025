@@ -1,6 +1,7 @@
-from django.shortcuts import render
-from django.views.generic import ListView, TemplateView
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, TemplateView, DetailView, View
 from newspaper.models import Category, Post, Tag
+from newspaper.forms import CommentForm, ContactForm, NewsletterForm
 
 from django.utils import timezone
 from datetime import timedelta
@@ -35,30 +36,11 @@ class HomeView(ListView):
             published_at__isnull=False, status="active"
         ).order_by("-published_at")[:7]
 
-        context["categories"] = Category.objects.all()[:3]
-        context["tags"] = Tag.objects.all()[:12]
-
-        context["trending_posts"] = Post.objects.filter(
-            published_at__isnull=False, status="active"
-        ).order_by("-views_count")[:3]
-
         return context
 
 
 class AboutView(TemplateView):
     template_name = "aznews/about.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context["categories"] = Category.objects.all()[:3]
-        context["tags"] = Tag.objects.all()[:12]
-
-        context["trending_posts"] = Post.objects.filter(
-            published_at__isnull=False, status="active"
-        ).order_by("-views_count")[:3]
-
-        return context
 
 
 class PostListView(ListView):
@@ -71,3 +53,156 @@ class PostListView(ListView):
         return Post.objects.filter(
             published_at__isnull=False, status="active"
         ).order_by("-published_at")
+
+
+class PostByCategoryView(ListView):
+    model = Post
+    template_name = "aznews/list/list.html"
+    context_object_name = "posts"
+    paginate_by = 1
+
+    # to filter data we use get_queryset method
+    def get_queryset(self):
+        # Post.objects.all()
+        query = super().get_queryset()
+        query = query.filter(
+            published_at__isnull=False,
+            status="active",
+            category__id=self.kwargs["category_id"],
+        ).order_by("-published_at")
+        return query
+
+
+class PostByTagView(ListView):
+    model = Post
+    template_name = "aznews/list/list.html"
+    context_object_name = "posts"
+    paginate_by = 1
+
+    def get_queryset(self):
+        query = super().get_queryset()
+        query = query.filter(
+            published_at__isnull=False,
+            status="active",
+            tag__id=self.kwargs["tag_id"],
+        ).order_by("-published_at")
+        return query
+
+
+class PostDetailView(DetailView):
+    model = Post
+    template_name = "aznews/detail/detail.html"
+    context_object_name = "post"
+
+    def get_queryset(self):
+        query = super().get_queryset()
+        query = query.filter(published_at__isnull=False, status="active")
+        return query
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # for increasing views count
+        obj = self.get_object()
+        obj.views_count += 1
+        obj.save()
+
+        # 7 => 1, 2, 3, 4, 5, 6 => 6, 5, 4, 3, 2, 1
+        context["previous_post"] = (
+            Post.objects.filter(
+                published_at__isnull=False, status="active", id__lt=obj.id
+            )
+            .order_by("-id")
+            .first()
+        )
+
+        # 8, 9, 10 ....
+        context["next_post"] = (
+            Post.objects.filter(
+                published_at__isnull=False, status="active", id__gt=obj.id
+            )
+            .order_by("id")
+            .first()
+        )
+
+        return context
+
+
+class CommentView(View):
+    def post(self, request, *args, **kwargs):
+        post_id = request.POST["post"]
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("post-detail", post_id)
+
+        post = Post.objects.get(pk=post_id)
+        return render(
+            request,
+            "aznews/detail/detail.html",
+            {"post": post, "form": form},
+        )
+
+
+from django.contrib import messages
+
+
+class ContactView(View):
+    template_name = "aznews/contact.html"
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, "Successfully submitted your query. We will contact you soon."
+            )
+            return redirect("contact")
+        else:
+            messages.error(
+                request,
+                "Cannot submit your query. Please make sure all fields are valid.",
+            )
+            return render(
+                request,
+                self.template_name,
+                {"form": form},
+            )
+
+
+from django.http import JsonResponse
+
+
+class NewsletterView(View):
+    def post(self, request):
+        is_ajax = request.headers.get("x-requested-with")
+        if is_ajax == "XMLHttpRequest":
+            form = NewsletterForm(request.POST)
+            if form.is_valid():
+                form.save()
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Successfully subscribed to the newsletter.",
+                    },
+                    status=201,
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Cannot subscribe to the newsletter.",
+                    },
+                    status=400,
+                )
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Cannot process. Must be an AJAX XMLHttpRequest",
+                },
+                status=400,
+            )
