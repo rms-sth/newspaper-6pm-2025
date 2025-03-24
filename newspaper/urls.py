@@ -15,5 +15,6 @@ urlpatterns = [
         views.ContactView.as_view(),
         name="contact",
     ),
-    path("newsletter/", views.NewsletterView.as_view(), name="newsletter")
+    path("newsletter/", views.NewsletterView.as_view(), name="newsletter"),
+    path("search/", views.PostSearchView.as_view(), name="search")
 ]
