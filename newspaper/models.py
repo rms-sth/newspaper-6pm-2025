@@ -27,6 +27,7 @@ class Tag(TimeStampModel):
 
 
 # category.post_set.count() => ForeignKey
+# category.post_set.all() => ForeignKey
 
 
 class Post(TimeStampModel):  # post.tag.all

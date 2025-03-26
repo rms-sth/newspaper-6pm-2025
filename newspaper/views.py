@@ -35,7 +35,8 @@ class HomeView(ListView):
         context["recent_posts"] = Post.objects.filter(
             published_at__isnull=False, status="active"
         ).order_by("-published_at")[:7]
-
+        
+        context['whats_new_categories'] = Category.objects.all()[:5]
         return context
 
 

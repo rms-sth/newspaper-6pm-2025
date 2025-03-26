@@ -23,6 +23,6 @@
         <a href="#"><i class="fa fa-comments"></i> 0 Comments</a>
       </li>
     </ul>
-    {{ post.content|linebreaksbr }}
+    {{ post.content|safe|linebreaksbr }}
   </div>
 </div>

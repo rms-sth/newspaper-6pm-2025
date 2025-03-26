@@ -14,7 +14,7 @@
       <a class="d-inline-block" href="{% url 'post-detail' post.id %}">
         <h2>{{ post.title }}</h2>
       </a>
-      <p>{{ post.content|truncatechars:100 }}</p>
+      <p>{{ post.content|striptags|truncatechars:100 }}</p>
       <ul class="blog-info-link">
         <li>
           <a href="#"><i class="fa fa-tags"></i>{{ post.tag.all|join:", " }}</a>
